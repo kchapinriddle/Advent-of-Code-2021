@@ -1,0 +1,33 @@
+#segs: 
+0:6
+1:2	UNIQUE
+2:5
+3:5
+4:4	UNIQUE
+5:5
+6:6
+7:3	UNIQUE
+8:7	UNIQUE
+9:6
+
+ID guide
+"0" is six-segment AND contains "1" AND isn't "9"
+"1" is two-segment
+"2" is five-segment AND not "3" AND missing TWO from "4"
+"3" is five-segment AND contains "7"
+"4" is four-segment
+"5" is five-segment AND missing ONE from "4"
+"6" is six-segment AND doesn't contain "1"
+"7" is three-segment
+"8" is seven-segment
+"9" is "4" plus "5"
+Order: 1478 35 2 9 60
+
+Segment ID guide (not used)
+"A" is IN "7" NOT in "1"
+"B" is IN "4" NOT in "3"
+"C" is IN "4" NOT in "5"
+"D" by process of elimination
+"E" is NOT in "9"
+"F" is IN "1" NOT in "2"
+"G" is IN "3" NOT in "4" and "7"
