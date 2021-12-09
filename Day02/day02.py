@@ -1,4 +1,4 @@
-# Day 1: Dive!
+# Day 02: Dive!
 
 # Part 1
 # Problem summary: Given a file containing one command per line,

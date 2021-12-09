@@ -1,4 +1,4 @@
-# Day 1: Sonar Sweep
+# Day 01: Sonar Sweep
 
 # Part 1
 # Problem summary: Given a file containing one int per line,
