@@ -1,4 +1,4 @@
-# Day 13: Extended Polymerization
+# Day 14: Extended Polymerization
 
 # Parts 1,2
 # Problem Summary: Input contains a string on the first line, blank second line,
