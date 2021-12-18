@@ -4,15 +4,17 @@
 # Problem Summary: 
 # Defies easy summary. See problem statements.
 
+import copy
+
 # TESTED init
 # TESTED magnitude
-# TESTEDish explode_check
-# TESTEDish split_check
-# TODO TEST reduce
-# TODO explode
-# TODO split
-# TODO addition
-# TODO finish up
+# TESTED explode_check
+# TESTED split_check
+# TESTED reduce
+# TESTED explode
+# TESTED split
+# TESTED addition
+# DONE finish up
 
 class sfnum:
     def __init__(self, parent, data):
@@ -25,6 +27,21 @@ class sfnum:
             self.right = data[1]
         else:
             self.right = sfnum(self, data[1])
+    
+    def copy(self):
+        cpy = sfnum(None, [0,0])
+        if type(self.left) == int:
+            cpy.left = self.left
+        else:
+            cpy.left = self.left.copy()
+            cpy.left.parent = cpy
+        if type(self.right) == int:
+            cpy.right = self.right
+        else:
+            cpy.right = self.right.copy()
+            cpy.right.parent = cpy
+        return cpy
+    
     def __str__(self):
         return "["+str(self.left)+","+str(self.right)+"]"
     
@@ -40,36 +57,78 @@ class sfnum:
             val += 2 * self.right.magnitude()
         return val
     
+    def explode_down(self,number,direction):
+        #print("D_XD",direction,self)
+        if direction == "L":
+            if type(self.right) == int:
+                self.right += number
+            else:
+                self.right.explode_down(number,direction)
+        elif direction == "R":
+            if type(self.left) == int:
+                self.left += number
+            else:
+                self.left.explode_down(number,direction)
+    
+    def explode_up(self,number,direction):
+        #print("D_XU",direction,self)
+        if self.parent == None: # Reached the top, done
+            return
+        elif (direction == "L" and self.parent.left == self) or (direction == "R" and self.parent.right == self):
+            self.parent.explode_up(number,direction)
+        elif direction == "L":
+            if type(self.parent.left) == int:
+                self.parent.left += number
+            else:
+                self.parent.left.explode_down(number,direction)
+        elif direction == "R":
+            if type(self.parent.right) == int:
+                self.parent.right += number
+            else:
+                self.parent.right.explode_down(number,direction)
+    
+    def explode(self):
+        #print("D_XX",self)
+        assert type(self.left == int)
+        assert type(self.right == int)
+        self.explode_up(self.left,"L")
+        self.explode_up(self.right,"R")
+        if self.parent.left == self:
+            self.parent.left = 0
+        elif self.parent.right == self:
+            self.parent.right = 0
+    
     def explode_check(self, depth = 0):
         if depth == 4:
-            print(self)
-            # TODO: explode call goes here
+            self.explode()
             return True
         else:
-            if type(self.left) == int:
-                pass
-            elif self.left.explode_check(depth+1):
+            if type(self.left) != int and self.left.explode_check(depth+1):
                 return True
-            elif type(self.right) == int:
-                return False
-            elif self.right.explode_check(depth+1):
+            elif type(self.right) != int and self.right.explode_check(depth+1):
                 return True
         return False
     
-    def split_check(self):
+    def split(self):
         if type(self.left) == int:
             if self.left >= 10:
-                # TODO: split call goes here
-                print(self, self.left)
-                return True
-        elif self.left.split_check():
-            return True
-        elif type(self.right) == int:
+                self.left = sfnum(self,[self.left//2,-(-self.left//2)])
+                return
+        if type(self.right) == int:
             if self.right >= 10:
-                # TODO: split call goes here
-                print(self, self.right)
-                return True
-        elif self.right.split_check():
+                self.right = sfnum(self,[self.right//2,-(-self.right//2)])
+                return
+    
+    def split_check(self):
+        if type(self.left) == int and self.left >= 10:
+            self.split()
+            return True
+        elif type(self.left) != int and self.left.split_check():
+            return True
+        elif type(self.right) == int and self.right >= 10:
+            self.split()
+            return True
+        elif type(self.right) != int and self.right.split_check():
             return True
         return False
     
@@ -77,14 +136,42 @@ class sfnum:
         while True:
             if self.explode_check():
                 continue
-            if self.split_check():
+            elif self.split_check():
                 continue
+            else:
+                return
+
+def add_sfnums(left, right):
+    new_sfnum = sfnum(None, [0,0])
+    new_sfnum.left = left.copy()
+    new_sfnum.left.parent = new_sfnum
+    new_sfnum.right = right.copy()
+    new_sfnum.right.parent = new_sfnum
+    new_sfnum.reduce()
+    return new_sfnum
 
 with open("input") as f:
     numbers = []
     for line in f.readlines():
-        n = eval(line.strip()) # Normally very unsafe to do, but very easy
+        l = line.strip()
+        for char in l:
+            if not char in "[],1234567890":
+                print("Unexpected character found, aborting before eval")
+                exit()
+        n = eval(l) # Normally very unsafe to do, but very easy
         sfn = sfnum(None, n)
-        print(sfn)
+        sfn.reduce()
+        numbers.append(sfn)
+    sfnumsum = numbers[0]
+    for n in range(1,len(numbers)):
+        sfnumsum = add_sfnums(sfnumsum, numbers[n])
+    print("Part 1:",sfnumsum.magnitude())
+    maxsum = 0
+    for i in numbers:
+        for j in numbers:
+            if i == j:
+                continue
+            maxsum = max(maxsum, add_sfnums(i,j).magnitude())
+    print("Part 2:",maxsum)
 
 input("Enter to exit")
