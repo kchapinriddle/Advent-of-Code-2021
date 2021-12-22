@@ -8,10 +8,15 @@
 # Part 1: Ignore anything outside [-50,50] on each axis
 # Part 2: Do the whole thing
 
-# TODO: It works! But too slowly
+# TODID: It works! But too slowly
 # Speed optimization - can adjacent "cuts" be glued together to keep command list from exploding?
 # Or perhaps only make necessary divisions, so as to prevent explosive growth?
-# Alternative: buffer not-overlapping segments, to prevent needless rechecking
+# Implemented: buffer not-overlapping segments, to prevent needless rechecking
+#       90% reduction in runtime!
+# Implemented: Don't store "off" commands after overlap is pruned - they've done their job
+#       80% reduction in command list size!
+
+import copy
 
 code = {'n':1,'f':0}
 
@@ -106,7 +111,34 @@ def split_overlapping_commands(c1,c2):
     split_semi_final = c1_split_final + c2_split_final
     return prune_overlap(split_semi_final)
 
-def reactor_command(reactor, c):
+def subreactor_command(subset, c):
+    new_command_num = c[7]
+    for rc in subset:
+        if check_intersection(rc,c):
+            subset.remove(rc)
+            spt = split_overlapping_commands(rc,c)
+            for com in spt: # Reinsert old split commands
+                if com[7] < new_command_num:
+                    subset.append(com)
+            for com in spt: # Recurse on splits of new command
+                if com[7] == new_command_num:
+                    subreactor_command(subset, com)
+            return
+    if c[0]:
+        subset.append(c) # If no overlaps, make sure to append!
+
+def new_reactor_command(reactor, c):
+    subset = []
+    for rc in reactor:
+        if check_intersection(rc,c):
+            subset.append(rc)
+    for ss in subset:
+        reactor.remove(ss)
+    subreactor_command(subset,c)
+    reactor += subset
+
+# Old version which did not trim non-intersecting before rechecking subsplits
+'''def reactor_command(reactor, c):
     new_command_num = c[7]
     for rc in reactor:
         if check_intersection(rc,c):
@@ -119,7 +151,8 @@ def reactor_command(reactor, c):
                 if com[7] == new_command_num:
                     reactor_command(reactor, com)
             return
-    reactor.append(c) # If no overlaps, make sure to append!
+    if c[0]:
+        reactor.append(c) # If no overlaps, make sure to append!'''
 
 with open("input") as f:
     commands = []
@@ -141,15 +174,21 @@ with open("input") as f:
         cubenum += 1
         commands.append(command)
     # Store reactor as list of commands
-    reactor = []
+    new_reactor = []
     # Run commands in order
     for c in commands:
-        print("Doing command #",c[7], "reactor size", len(reactor))
-        reactor_command(reactor,c)
+        print("Doing command #",c[7], "reactor size", len(new_reactor))
+        new_reactor_command(new_reactor,c)
     cells_active = 0
-    for c in reactor:
+    for c in new_reactor: # Hacky: Ignores anything outside bounds because input for part 1 never goes partially out of bounds
+        if c[1] < -50 or c[2] > 50 or c[3] < -50 or c[4] > 50 or c[5] < -50 or c[6] > 50:
+            continue
         cells_active += c[0] * (c[2]+1-c[1]) * (c[4]+1-c[3]) * (c[6]+1-c[5])
     print("Part 1:", cells_active)
+    cells_active = 0
+    for c in new_reactor:
+        cells_active += c[0] * (c[2]+1-c[1]) * (c[4]+1-c[3]) * (c[6]+1-c[5])
+    print("Part 2:", cells_active)
 
 
 input("Enter to exit")
