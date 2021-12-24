@@ -1,0 +1,73 @@
+14 blocks of 18 lines each, starting with "imp w" and ending with "mul y x, add z y"
+Differ ONLY in the constants on lines 5, 6, 16
+
+01: inp w
+02: mul x 0
+03: add x z
+04: mod x 26
+05: div z ??
+06: add x ??
+07: eql x w
+08: eql x 0
+09: mul y 0
+10: add y 25
+11: mul y x
+12: add y 1
+13: mul z y
+14: mul y 0
+15: add y w
+16: add y ??
+17: mul y x
+18: add z y
+
+Thus, program in pseudocode is 14 blocks of:
+w = input				# Line 1		#
+x = (z % 26) + VARIABLE	# Lines 2-4,6	# Variable somtimes positive, sometimes negative
+x==w ? x=0 ; x=1		# Lines 7,8		# Cannot meet condition if variable  >= 10
+z /= VARIABLE			# Line 5		# Always /26 if l6's variable is -, otherwise /1
+z *= (25 * x) + 1		# Lines 9-13	#
+z += (w + VARIABLE) *x	# Lines 15-18 	# VARIABLE always positive, z only remains 0 if x == 0 (if x == w)
+
+Last block outputs 0 iff (Z - input) == 12. 
+
+Frequency of "26" and "25" as literals suggests this is text manipulation
+	And "merrychristmas" is length 14.
+
+Variables appear to create an offset from the given input - serve to add a constant
+Alternatively, set to 0 if z is above input by certain amount
+
+
+Worked instances:
+
+For block 11: (Variables: Ln5=1, Ln6=13, Ln16=11)	# Positive sixth line type / div1 dype
+
+w = input				
+x = 1
+z *= 26
+z += w + 11
+SO:
+z = z*26 + 11 + input									# ADD NEW LETTER (IN+11)
+
+For block 5: (Variables: Ln5=26, Ln6=-10, Ln16=13)	# Negative sixth line type / div26 type
+w = input
+z //= 26
+z *= 26
+z += (w + 13)
+SO:
+IF: z%26 == input + 10:									# IF LAST LETTER IS (IN+10)
+	z //= 26											# REMOVE LAST LETTER
+EL:
+	Round z down to multiple of 26, add (input + 13)	# ELSE SET LAST LETTER (IN+13)
+
+pseudocode of a block:
+if ln5 is //1:
+	add new letter ( input + ln16 )
+elif last letter is ( input + ln6 ):
+	remove last letter
+else:
+	last letter becomes ( input + ln16 )
+
+Objective: Empty string at end
+
+Seven add blocks, seven remove/adjust blocks
+	MUST remove in each remove/adjust block.
