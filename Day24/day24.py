@@ -20,9 +20,10 @@
 
 # Part 2: Find smallest 14-digit string that results in z == 0
 
-# This code only used to test an input/state pair and see results
+# This code (WAS) only used to test an input/state pair and see results
 # Most work done in monad_analysis.txt and worksheet.ods
 # This was fundamentally a reverse engineering problem, not a coding problem
+# NOT ANYMORE, now derives the correct input strings from the program
 
 reg_ids = {'w':0, 'x':1, 'y':2, 'z':3}
 
@@ -94,34 +95,59 @@ with open("input") as f:
     for line in f.readlines():
         instructions.append(line.strip())
     
+    # Break the program into blocks, identify push and pop blocks and their constants
+    block = [] # Entries are [line 5 constant, line 6 constant, line 16 constant]
+    stack_constants = [] # Entries are [push constant, push index]
+    stack_pairs = [] # Entries are [push constant, pop constant, push index, pop index]
+    for i in range(len(instructions)):
+        if i % 18 == 5-1: # Record indicator of push or pop behavior: 1 means push, 26 means pop
+            block.append(int(instructions[i].split(' ')[2]))
+        elif i % 18 == 6-1: # Record constant for pop-type block: pushes (this+input)
+            block.append(int(instructions[i].split(' ')[2]))
+        elif i % 18 == 16-1: # Record constant for push-type block: pops iff top is (this+input)
+            block.append(int(instructions[i].split(' ')[2]))
+        elif i % 18 == 18-1: # End of block, handle it
+            if block[0] == 1:
+                stack_constants.append([block[2],int(i/18)])
+            elif block[0] == 26:
+                stack_pairs.append([stack_constants[-1][0],block[1],stack_constants[-1][1],int(i/18)])
+                stack_constants.pop()
+            block = [] # And reset for the next block
+    
+    # Use identified paired blocks to construct largest and smallest inputs
+    max_inl, min_inl = [0]*14, [0]*14
+    for sp in stack_pairs:
+        difference = sp[0] + sp[1] # push input - pop input must equal this
+        ip = [0,0,0,0] # max then min
+        if difference >= 0:
+            ip[0],ip[1] = 9-difference, 9
+            ip[2],ip[3] = 1, 1+difference
+        elif difference < 0:
+            ip[0],ip[1] = 9, 9+difference
+            ip[2],ip[3] = 1-difference, 1
+        max_inl[sp[2]],max_inl[sp[3]] = ip[0],ip[1]
+        min_inl[sp[2]],min_inl[sp[3]] = ip[2],ip[3]
+
+    max_in = ""
+    for c in max_inl:
+        max_in += str(c)
+    min_in = ""
+    for c in min_inl:
+        min_in += str(c)
+    
     #Part 1 verify z output
-    state = ALU("59996912981939")
-    #state.registers[3] = 13+26+26
-    print(state)
+    #state = ALU("59996912981939")
+    state = ALU(max_in)
+    
     for line in instructions:
         state.parse_inst(line)
-    print(state)
-    
-    print()
+    print("Part 1: Derived input is", max_in, "value of z was", state.registers[3], "(should be 0)")
     
     #Part 2 verify z output
-    state = ALU("17241911811915")
-    #state.registers[3] = 13+26+26
-    print(state)
+    #state = ALU("17241911811915")
+    state = ALU(min_in)
     for line in instructions:
         state.parse_inst(line)
-    print(state)
-    
-    '''#for zstate in range(26):
-    for zstate in [11,11+26]:
-        for digit in [1,2]:
-        #for digit in range(1,10):
-            state = ALU(str(digit))
-            state.registers[3] = zstate
-            for line in instructions:
-                state.parse_inst(line)
-            #if state.registers[3] == 0:
-            #    print("Z, in:",zstate,digit)
-            print("Z, in, out:",zstate, digit, state.registers[3])'''
+    print("Part 2: Derived input is", min_in, "value of z was", state.registers[3], "(should be 0)")
 
 input("Enter to exit")
